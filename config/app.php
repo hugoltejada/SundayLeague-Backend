@@ -123,4 +123,6 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+
+    'phone_key' => env('PHONE_KEY', 'default-phone-key'),
 ];

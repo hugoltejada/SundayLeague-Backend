@@ -1,6 +1,11 @@
 use App\Http\Controllers\Api\PhoneController;
 
-Route::prefix('phone')->group(function () {
-Route::post('/phone/registry', [PhoneController::class, 'register']);
-Route::post('/phone/check', [PhoneController::class, 'verify']);
-});
+
+Route::post('phone/register-email', [PhoneController::class, 'registerEmail'])
+->middleware('phone.key');
+
+Route::post('phone/verify-email', [PhoneController::class, 'verifyEmail'])
+->middleware('phone.key');
+
+Route::post('phone/register-google', [PhoneController::class, 'registerGoogle'])
+->middleware('phone.key');

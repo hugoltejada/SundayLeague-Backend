@@ -56,17 +56,23 @@ return new class extends Migration
         // Phones
         Schema::create('phones', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('player_id')->constrained('players')->onDelete('cascade');
-            $table->string('device_id')->unique();
-            $table->string('email')->nullable();
+            $table->string('name');
+            $table->string('email')->unique();
+            $table->string('device_id')->nullable();
             $table->string('platform')->nullable();
             $table->string('notification_token')->nullable();
-            $table->string('auth_code', 8)->nullable();
+
+            // Solo para registro con email
+            $table->string('password')->nullable();
+            $table->string('auth_code', 10)->nullable();
             $table->boolean('auth')->default(false);
             $table->timestamp('authorized_at')->nullable();
 
-            $table->softDeletes();
+            // Para Google puedes guardar el "google_id" opcional
+            $table->string('google_id')->nullable();
+
             $table->timestamps();
+            $table->softDeletes();
         });
 
         // Matches
