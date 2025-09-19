@@ -9,7 +9,7 @@ class CheckPhoneKey
 {
     public function handle(Request $request, Closure $next)
     {
-        $token = $request->header('Authorization') ?? $request->input('token');
+        $token = $request->bearerToken() ?? $request->input('token');
 
         if (!$token || $token !== config('app.phone_key')) {
             return response()->json([
@@ -17,6 +17,7 @@ class CheckPhoneKey
                 'message' => 'Token not found',
             ], 401);
         }
+
 
         return $next($request);
     }

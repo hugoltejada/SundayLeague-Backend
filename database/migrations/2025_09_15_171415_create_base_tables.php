@@ -61,6 +61,7 @@ return new class extends Migration
             $table->string('device_id')->nullable();
             $table->string('platform')->nullable();
             $table->string('notification_token')->nullable();
+            $table->unsignedBigInteger('player_id')->nullable();
 
             // Solo para registro con email
             $table->string('password')->nullable();

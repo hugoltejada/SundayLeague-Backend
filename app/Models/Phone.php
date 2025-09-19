@@ -12,14 +12,16 @@ class Phone extends Model
 
     protected $fillable = [
         'player_id',
-        'device_id',
+        'name',
         'email',
-        'phone',
+        'password',
+        'device_id',
         'platform',
         'notification_token',
-        'auth_code',
         'auth',
+        'auth_code',
         'authorized_at',
+        'google_id',
     ];
 
     protected $casts = [
