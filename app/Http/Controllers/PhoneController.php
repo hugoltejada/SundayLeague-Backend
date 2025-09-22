@@ -5,12 +5,14 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\PhoneRegisterEmailRequest;
 use App\Http\Requests\PhoneVerifyEmailRequest;
-use App\Http\Requests\PhoneRegisterGoogleRequest;
+use App\Http\Requests\PhoneVerifyGoogleRequest;
 use App\Models\Phone;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\PhoneConfirmationCodeMail;
 use Carbon\Carbon;
+
+use Google_Client;
 
 class PhoneController extends Controller
 {
@@ -69,22 +71,33 @@ class PhoneController extends Controller
     }
 
     /**
-     * Registro con Google
+     * Verificación con Google ID Token
      */
-    public function registerGoogle(PhoneRegisterGoogleRequest $request)
+    public function verifyGoogle(PhoneVerifyGoogleRequest $request)
     {
-        $data = $request->validated();
+        $client = new \Google_Client(['client_id' => env('GOOGLE_CLIENT_ID')]);
+        $payload = $client->verifyIdToken($request->id_token);
 
-        $phone = Phone::create([
-            'google_id'          => $data['google_id'],
-            'name'               => $data['name'],
-            'email'              => $data['email'],
-            'device_id'          => $data['device_id'] ?? null,
-            'platform'           => $data['platform'] ?? null,
-            'notification_token' => $data['notification_token'] ?? null,
-            'auth'               => true,
-            'authorized_at'      => Carbon::now(),
-        ]);
+        if (!$payload) {
+            return response()->json(['error' => true, 'message' => 'Invalid Google token'], 401);
+        }
+
+        $googleId = $payload['sub'];   // ID único de Google
+        $email    = $payload['email'] ?? null;
+        $name     = $payload['name'] ?? 'Usuario';
+
+        $phone = Phone::updateOrCreate(
+            ['google_id' => $googleId],
+            [
+                'name'               => $name,
+                'email'              => $email,
+                'device_id'          => $request->device_id,
+                'platform'           => $request->platform,
+                'notification_token' => $request->notification_token,
+                'auth'               => true,
+                'authorized_at'      => now(),
+            ]
+        );
 
         return response()->json([
             'error' => false,

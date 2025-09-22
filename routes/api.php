@@ -9,5 +9,5 @@ Route::post('phone/register-email', [PhoneController::class, 'registerEmail'])
 Route::post('phone/verify-email', [PhoneController::class, 'verifyEmail'])
     ->middleware('phone.key');
 
-Route::post('phone/register-google', [PhoneController::class, 'registerGoogle'])
+Route::post('/phone/verify-google', [PhoneController::class, 'verifyGoogle'])
     ->middleware('phone.key');
