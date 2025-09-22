@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\PhoneConfirmationCodeMail;
 use Carbon\Carbon;
+use Kreait\Firebase\Factory;
+
 
 use Google_Client;
 
@@ -71,37 +73,71 @@ class PhoneController extends Controller
     }
 
     /**
-     * Verificación con Google ID Token
+     * Registro con Google
      */
-    public function verifyGoogle(PhoneVerifyGoogleRequest $request)
+    public function registryGoogle(PhoneVerifyGoogleRequest $request)
     {
-        $client = new \Google_Client(['client_id' => env('GOOGLE_CLIENT_ID')]);
-        $payload = $client->verifyIdToken($request->id_token);
+        $data = $request->validated();
 
-        if (!$payload) {
-            return response()->json(['error' => true, 'message' => 'Invalid Google token'], 401);
+        try {
+            $firebase = (new Factory)
+                ->withServiceAccount(base_path(env('FIREBASE_CREDENTIALS')));
+            $auth = $firebase->createAuth();
+
+            $verifiedIdToken = $auth->verifyIdToken($data['id_token']);
+            $claims = $verifiedIdToken->claims();
+
+            $email = $claims->get('email');
+            $name  = $claims->get('name');
+            $googleId = $claims->get('sub');
+
+
+            if (!$email) {
+                return response()->json(['error' => true, 'message' => 'Firebase token missing email'], 422);
+            }
+
+            $phone = Phone::withTrashed()->where('email', $email)->first();
+
+            if (!$phone) {
+                $phone = Phone::create([
+                    'name'               => $name,
+                    'email'              => $email,
+                    'google_id'          => $googleId,
+                    'password'           => null,
+                    'device_id'          => $data['device_id'] ?? null,
+                    'platform'           => $data['platform'] ?? null,
+                    'notification_token' => $data['notification_token'] ?? null,
+                    'auth'               => true,
+                    'authorized_at'      => now(),
+                ]);
+            } else {
+                $phone->restore();
+                $phone->update([
+                    'name'               => $name,
+                    'google_id'          => $googleId,
+                    'device_id'          => $data['device_id'] ?? null,
+                    'platform'           => $data['platform'] ?? null,
+                    'notification_token' => $data['notification_token'] ?? null,
+                    'auth'               => true,
+                    'authorized_at'      => now(),
+                ]);
+            }
+
+            return response()->json([
+                'error' => false,
+                'message' => 'Google user registered via Firebase',
+                'user' => [
+                    'id'    => $phone->id,
+                    'name'  => $phone->name,
+                    'email' => $phone->email,
+                ]
+            ], 200);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'error' => true,
+                'message' => 'Invalid Firebase ID Token',
+                'exception' => $e->getMessage(),
+            ], 401);
         }
-
-        $googleId = $payload['sub'];   // ID único de Google
-        $email    = $payload['email'] ?? null;
-        $name     = $payload['name'] ?? 'Usuario';
-
-        $phone = Phone::updateOrCreate(
-            ['google_id' => $googleId],
-            [
-                'name'               => $name,
-                'email'              => $email,
-                'device_id'          => $request->device_id,
-                'platform'           => $request->platform,
-                'notification_token' => $request->notification_token,
-                'auth'               => true,
-                'authorized_at'      => now(),
-            ]
-        );
-
-        return response()->json([
-            'error' => false,
-            'data'  => $phone,
-        ], 200);
     }
 }
