@@ -6,12 +6,9 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
-        //Config
+        // Config
         Schema::create('config', function (Blueprint $table) {
             $table->id();
             $table->string('key')->unique();
@@ -22,17 +19,44 @@ return new class extends Migration
         // Clubs
         Schema::create('clubs', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
+            $table->string('name')->unique();
             $table->string('stadium')->nullable();
             $table->string('schedule')->nullable();
+            $table->string('location')->nullable();
+            $table->string('invitation_code')->unique();
             $table->text('description')->nullable();
             $table->timestamps();
         });
 
-        // Players
+
+        // Phones (usuarios)
+        Schema::create('phones', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->string('email')->unique();
+            $table->string('platform')->nullable();
+            $table->string('notification_token')->nullable();
+
+            // Solo para registro con email
+            $table->string('password')->nullable();
+            $table->string('auth_code', 10)->nullable();
+            $table->boolean('auth')->default(false);
+            $table->timestamp('authorized_at')->nullable();
+
+            // Para Google
+            $table->string('google_id')->nullable();
+
+            // Nuevo campo para auth seguro
+            $table->string('auth_token', 80)->unique()->nullable();
+
+            $table->timestamps();
+            $table->softDeletes();
+        });
+
+        // Players (relacionados con phones)
         Schema::create('players', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('club_id')->constrained('clubs')->onDelete('cascade');
+            $table->foreignId('phone_id')->unique()->constrained('phones')->onDelete('cascade');
             $table->string('name');
             $table->integer('age')->nullable();
             $table->string('position')->nullable();
@@ -48,32 +72,35 @@ return new class extends Migration
             $table->timestamps();
         });
 
+        // Supporters (relacionados con phones)
+        Schema::create('supporters', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('phone_id')->unique()->constrained('phones')->onDelete('cascade');
+            $table->string('nickname')->nullable();
+            $table->text('preferences')->nullable();
+            $table->timestamps();
+        });
+
         // Ahora que players existe, añadimos president_id en clubs
         Schema::table('clubs', function (Blueprint $table) {
             $table->foreignId('president_id')->nullable()->constrained('players');
         });
 
-        // Phones
-        Schema::create('phones', function (Blueprint $table) {
+        // Relación muchos a muchos: players - clubs
+        Schema::create('club_player', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->string('email')->unique();
-            $table->string('device_id')->nullable();
-            $table->string('platform')->nullable();
-            $table->string('notification_token')->nullable();
-            $table->unsignedBigInteger('player_id')->nullable();
-
-            // Solo para registro con email
-            $table->string('password')->nullable();
-            $table->string('auth_code', 10)->nullable();
-            $table->boolean('auth')->default(false);
-            $table->timestamp('authorized_at')->nullable();
-
-            // Para Google puedes guardar el "google_id" opcional
-            $table->string('google_id')->nullable();
-
+            $table->foreignId('club_id')->constrained('clubs')->onDelete('cascade');
+            $table->foreignId('player_id')->constrained('players')->onDelete('cascade');
+            $table->boolean('is_active')->default(true);
             $table->timestamps();
-            $table->softDeletes();
+        });
+
+        // Relación muchos a muchos: supporters - clubs
+        Schema::create('club_supporter', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('club_id')->constrained('clubs')->onDelete('cascade');
+            $table->foreignId('supporter_id')->constrained('supporters')->onDelete('cascade');
+            $table->timestamps();
         });
 
         // Matches
@@ -101,16 +128,16 @@ return new class extends Migration
         });
     }
 
-
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('match_player');
         Schema::dropIfExists('matches');
-        Schema::dropIfExists('phones');
+        Schema::dropIfExists('club_supporter');
+        Schema::dropIfExists('club_player');
+        Schema::dropIfExists('supporters');
         Schema::dropIfExists('players');
+        Schema::dropIfExists('phones');
         Schema::dropIfExists('clubs');
+        Schema::dropIfExists('config');
     }
 };

@@ -10,7 +10,7 @@ class Player extends Model
     use HasFactory;
 
     protected $fillable = [
-        'club_id',
+        'phone_id',
         'name',
         'age',
         'position',
@@ -22,23 +22,25 @@ class Player extends Model
         'description',
         'height',
         'weight',
-        'preferred_foot',
+        'strong_foot',
     ];
 
-    public function club()
+    public function phone()
     {
-        return $this->belongsTo(Club::class);
+        return $this->belongsTo(Phone::class);
     }
 
-    public function phones()
+    public function clubs()
     {
-        return $this->hasMany(Phone::class);
+        return $this->belongsToMany(Club::class, 'club_player')
+            ->withTimestamps()
+            ->withPivot('is_active');
     }
 
     public function matches()
     {
-        return $this->belongsToMany(Match::class, 'match_player')
-                    ->withPivot('team_side', 'is_captain', 'goals', 'assists')
-                    ->withTimestamps();
+        return $this->belongsToMany(Matches::class, 'match_player')
+            ->withPivot('team_side', 'is_captain', 'goals', 'assists')
+            ->withTimestamps();
     }
 }

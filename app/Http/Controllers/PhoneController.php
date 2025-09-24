@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Mail;
 use App\Mail\PhoneConfirmationCodeMail;
 use Carbon\Carbon;
 use Kreait\Firebase\Factory;
+use Illuminate\Support\Str;
 
 
 use Google_Client;
@@ -29,19 +30,29 @@ class PhoneController extends Controller
             'name'               => $data['name'],
             'email'              => $data['email'],
             'password'           => Hash::make($data['password']),
-            'device_id'          => $data['device_id'] ?? null,
             'platform'           => $data['platform'] ?? null,
             'notification_token' => $data['notification_token'] ?? null,
             'auth'               => false,
             'auth_code'          => str_pad((string) random_int(0, 9999), 4, '0', STR_PAD_LEFT),
+            'auth_token'         => Str::random(60),
+        ]);
+
+        // Crear Player y Supporter asociados
+        $phone->player()->create([
+            'name' => $phone->name,
+        ]);
+
+        $phone->supporter()->create([
+            'nickname' => $phone->name,
         ]);
 
         // enviar email con código
         Mail::to($phone->email)->send(new PhoneConfirmationCodeMail($phone));
 
         return response()->json([
-            'error'   => false,
-            'message' => 'Verification code sent',
+            'error'      => false,
+            'message'    => 'Verification code sent',
+            'auth_token' => $phone->auth_token,
         ], 200);
     }
 
@@ -104,18 +115,25 @@ class PhoneController extends Controller
                     'email'              => $email,
                     'google_id'          => $googleId,
                     'password'           => null,
-                    'device_id'          => $data['device_id'] ?? null,
                     'platform'           => $data['platform'] ?? null,
                     'notification_token' => $data['notification_token'] ?? null,
                     'auth'               => true,
                     'authorized_at'      => now(),
+                    'auth_token'         => Str::random(60),
+                ]);
+                // Crear Player y Supporter asociados
+                $phone->player()->create([
+                    'name' => $phone->name,
+                ]);
+
+                $phone->supporter()->create([
+                    'nickname' => $phone->name,
                 ]);
             } else {
                 $phone->restore();
                 $phone->update([
                     'name'               => $name,
                     'google_id'          => $googleId,
-                    'device_id'          => $data['device_id'] ?? null,
                     'platform'           => $data['platform'] ?? null,
                     'notification_token' => $data['notification_token'] ?? null,
                     'auth'               => true,
@@ -124,12 +142,13 @@ class PhoneController extends Controller
             }
 
             return response()->json([
-                'error' => false,
+                'error'   => false,
                 'message' => 'Google user registered via Firebase',
-                'user' => [
-                    'id'    => $phone->id,
-                    'name'  => $phone->name,
-                    'email' => $phone->email,
+                'user'    => [
+                    'id'         => $phone->id,
+                    'name'       => $phone->name,
+                    'email'      => $phone->email,
+                    'auth_token' => $phone->auth_token,
                 ]
             ], 200);
         } catch (\Throwable $e) {

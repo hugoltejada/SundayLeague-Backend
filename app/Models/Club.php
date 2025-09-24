@@ -13,6 +13,8 @@ class Club extends Model
         'name',
         'stadium',
         'schedule',
+        'location',
+        'invitation_code',
         'description',
         'president_id',
     ];
@@ -24,11 +26,19 @@ class Club extends Model
 
     public function players()
     {
-        return $this->hasMany(Player::class);
+        return $this->belongsToMany(Player::class, 'club_player')
+            ->withTimestamps()
+            ->withPivot('is_active');
+    }
+
+    public function supporters()
+    {
+        return $this->belongsToMany(Supporter::class, 'club_supporter')
+            ->withTimestamps();
     }
 
     public function matches()
     {
-        return $this->hasMany(Match::class);
+        return $this->hasMany(Matches::class);
     }
 }

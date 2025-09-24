@@ -22,7 +22,7 @@ class MatchPlayer extends Model
 
     public function match()
     {
-        return $this->belongsTo(Match::class);
+        return $this->belongsTo(Matches::class);
     }
 
     public function player()

@@ -11,17 +11,16 @@ class Phone extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'player_id',
         'name',
         'email',
         'password',
-        'device_id',
         'platform',
         'notification_token',
         'auth',
         'auth_code',
         'authorized_at',
         'google_id',
+        'auth_token',
     ];
 
     protected $casts = [
@@ -31,6 +30,11 @@ class Phone extends Model
 
     public function player()
     {
-        return $this->belongsTo(Player::class);
+        return $this->hasOne(Player::class);
+    }
+
+    public function supporter()
+    {
+        return $this->hasOne(Supporter::class);
     }
 }
