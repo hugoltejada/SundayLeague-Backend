@@ -17,6 +17,13 @@ class Club extends Model
         'invitation_code',
         'description',
         'president_id',
+        'image_url',
+        'default_schedules',
+        'match_duration',
+    ];
+
+    protected $casts = [
+        'default_schedules' => 'array',
     ];
 
     public function president()

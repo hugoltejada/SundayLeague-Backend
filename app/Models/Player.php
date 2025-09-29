@@ -23,6 +23,7 @@ class Player extends Model
         'height',
         'weight',
         'strong_foot',
+        'avatar',
     ];
 
     public function phone()

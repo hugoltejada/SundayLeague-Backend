@@ -20,3 +20,14 @@ WORKDIR /var/www/html
 
 # Permisos para Laravel
 RUN chown -R www-data:www-data /var/www/html
+
+# Copiar configuración personalizada (tamaño uploads)
+COPY php-conf.d/upload.ini /usr/local/etc/php/conf.d/upload.ini
+
+# Copiar entrypoint
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]
+
+CMD ["php-fpm"]

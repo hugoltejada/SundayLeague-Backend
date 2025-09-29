@@ -19,7 +19,7 @@ class Phone extends Model
         'auth',
         'auth_code',
         'authorized_at',
-        'google_id',
+        'firebase_id',
         'auth_token',
     ];
 

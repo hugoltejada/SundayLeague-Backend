@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
 use App\Http\Requests\PhoneRegisterEmailRequest;
 use App\Http\Requests\PhoneVerifyEmailRequest;
 use App\Http\Requests\PhoneVerifyGoogleRequest;
@@ -22,65 +23,56 @@ class PhoneController extends Controller
     /**
      * Registro con email
      */
-    public function registerEmail(PhoneRegisterEmailRequest $request)
+    public function registryEmail(Request $request)
     {
-        $data = $request->validated();
+        try {
+            $firebaseUid   = $request->attributes->get('firebase_id');
+            $firebaseEmail = $request->attributes->get('firebase_email');
 
-        $phone = Phone::create([
-            'name'               => $data['name'],
-            'email'              => $data['email'],
-            'password'           => Hash::make($data['password']),
-            'platform'           => $data['platform'] ?? null,
-            'notification_token' => $data['notification_token'] ?? null,
-            'auth'               => false,
-            'auth_code'          => str_pad((string) random_int(0, 9999), 4, '0', STR_PAD_LEFT),
-            'auth_token'         => Str::random(60),
-        ]);
+            if (!$firebaseEmail) {
+                return response()->json(['error' => true, 'message' => 'Firebase token missing email'], 422);
+            }
 
-        // Crear Player y Supporter asociados
-        $phone->player()->create([
-            'name' => $phone->name,
-        ]);
+            $name              = $request->input('name') ?? 'User';
+            $platform          = $request->input('platform') ?? '';
+            $notificationToken = $request->input('notification_token') ?? '';
 
-        $phone->supporter()->create([
-            'nickname' => $phone->name,
-        ]);
+            $phone = Phone::firstOrCreate(
+                ['firebase_id' => $firebaseUid],
+                [
+                    'name'               => $name,
+                    'email'              => $firebaseEmail,
+                    'platform'           => $platform,
+                    'notification_token' => $notificationToken,
+                    'auth'               => true,
+                    'authorized_at'      => now(),
+                    'auth_token'         => Str::random(60),
+                ]
+            );
 
-        // enviar email con código
-        Mail::to($phone->email)->send(new PhoneConfirmationCodeMail($phone));
+            if (!$phone->player) {
+                $phone->player()->create([
+                    'name' => $phone->name,
+                    'avatar' => $request->input('avatar'),
+                ]);
+            }
+            if (!$phone->supporter) {
+                $phone->supporter()->create(['nickname' => $phone->name]);
+            }
 
-        return response()->json([
-            'error'      => false,
-            'message'    => 'Verification code sent',
-            'auth_token' => $phone->auth_token,
-        ], 200);
-    }
-
-    /**
-     * Verificación de email con código
-     */
-    public function verifyEmail(PhoneVerifyEmailRequest $request)
-    {
-        $data = $request->validated();
-
-        $phone = Phone::where('email', $data['email'])
-            ->where('auth_code', $data['auth_code'])
-            ->first();
-
-        if (!$phone) {
-            return response()->json(['error' => true, 'message' => 'Invalid code'], 404);
+            return response()->json([
+                'error'   => false,
+                'message' => 'Bootstrap ok',
+                'phone'   => $phone,
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('[Controller] Error registryEmail: ' . $e->getMessage());
+            return response()->json([
+                'error'     => true,
+                'message'   => 'Invalid Firebase ID Token',
+                'exception' => $e->getMessage(),
+            ], 401);
         }
-
-        if ($phone->auth) {
-            return response()->json(['error' => true, 'message' => 'Already verified'], 409);
-        }
-
-        $phone->update([
-            'auth'          => true,
-            'authorized_at' => Carbon::now(),
-        ]);
-
-        return response()->json(['error' => false, 'message' => 'Verified'], 200);
     }
 
     /**
@@ -113,7 +105,7 @@ class PhoneController extends Controller
                 $phone = Phone::create([
                     'name'               => $name,
                     'email'              => $email,
-                    'google_id'          => $googleId,
+                    'firebase_id'          => $googleId,
                     'password'           => null,
                     'platform'           => $data['platform'] ?? null,
                     'notification_token' => $data['notification_token'] ?? null,
@@ -124,6 +116,7 @@ class PhoneController extends Controller
                 // Crear Player y Supporter asociados
                 $phone->player()->create([
                     'name' => $phone->name,
+                    'avatar' => $request->input('avatar'),
                 ]);
 
                 $phone->supporter()->create([
@@ -133,7 +126,7 @@ class PhoneController extends Controller
                 $phone->restore();
                 $phone->update([
                     'name'               => $name,
-                    'google_id'          => $googleId,
+                    'firebase_id'          => $googleId,
                     'platform'           => $data['platform'] ?? null,
                     'notification_token' => $data['notification_token'] ?? null,
                     'auth'               => true,
@@ -155,6 +148,53 @@ class PhoneController extends Controller
             return response()->json([
                 'error' => true,
                 'message' => 'Invalid Firebase ID Token',
+                'exception' => $e->getMessage(),
+            ], 401);
+        }
+    }
+
+    /**
+     * Inicio de sesión con email y contraseña
+     */
+    public function loginEmail(Request $request)
+    {
+        try {
+            $firebaseUid   = $request->attributes->get('firebase_id');
+            $firebaseEmail = $request->attributes->get('firebase_email');
+
+            if (!$firebaseEmail) {
+                return response()->json(['error' => true, 'message' => 'Firebase token missing email'], 422);
+            }
+
+            $platform          = $request->input('platform') ?? '';
+            $notificationToken = $request->input('notification_token') ?? '';
+
+            // Buscar el Phone
+            $phone = Phone::where('firebase_id', $firebaseUid)->first();
+
+            if (!$phone) {
+                return response()->json(['error' => true, 'message' => 'Phone not found'], 404);
+            }
+
+            // Actualizar datos de sesión
+            $phone->update([
+                'platform'           => $platform,
+                'notification_token' => $notificationToken,
+                'auth'               => true,
+                'authorized_at'      => now(),
+                'auth_token'         => Str::random(60), // 🔑 refrescamos auth_token
+            ]);
+
+            return response()->json([
+                'error'   => false,
+                'message' => 'Login ok',
+                'phone'   => $phone,
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('[Controller] Error loginEmail: ' . $e->getMessage());
+            return response()->json([
+                'error'     => true,
+                'message'   => 'Invalid Firebase ID Token',
                 'exception' => $e->getMessage(),
             ], 401);
         }

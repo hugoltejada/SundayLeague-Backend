@@ -21,10 +21,10 @@ return new class extends Migration
             $table->id();
             $table->string('name')->unique();
             $table->string('stadium')->nullable();
-            $table->string('schedule')->nullable();
             $table->string('location')->nullable();
             $table->string('invitation_code')->unique();
             $table->text('description')->nullable();
+            $table->string('image_url')->nullable();
             $table->timestamps();
         });
 
@@ -44,7 +44,7 @@ return new class extends Migration
             $table->timestamp('authorized_at')->nullable();
 
             // Para Google
-            $table->string('google_id')->nullable();
+            $table->string('firebase_id')->nullable();
 
             // Nuevo campo para auth seguro
             $table->string('auth_token', 80)->unique()->nullable();
@@ -61,10 +61,6 @@ return new class extends Migration
             $table->integer('age')->nullable();
             $table->string('position')->nullable();
             $table->string('nationality')->nullable();
-            $table->enum('role', ['president', 'president_player', 'player', 'player_staff'])->default('player');
-            $table->integer('goals')->default(0);
-            $table->integer('assists')->default(0);
-            $table->integer('matches_played')->default(0);
             $table->text('description')->nullable();
             $table->decimal('height', 5, 2)->nullable();
             $table->decimal('weight', 5, 2)->nullable();
@@ -91,9 +87,16 @@ return new class extends Migration
             $table->id();
             $table->foreignId('club_id')->constrained('clubs')->onDelete('cascade');
             $table->foreignId('player_id')->constrained('players')->onDelete('cascade');
-            $table->boolean('is_active')->default(true);
+            $table->boolean('is_active')->default(false);
+
+            // Estadísticas dentro del club
+            $table->integer('goals')->default(0);
+            $table->integer('assists')->default(0);
+            $table->integer('matches_played')->default(0);
+
             $table->timestamps();
         });
+
 
         // Relación muchos a muchos: supporters - clubs
         Schema::create('club_supporter', function (Blueprint $table) {

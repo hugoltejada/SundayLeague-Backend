@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'phone.key' => \App\Http\Middleware\CheckPhoneKey::class,
             'auth.phone' => \App\Http\Middleware\CheckAuthToken::class,
+            'firebase.auth' => \App\Http\Middleware\VerifyFirebaseToken::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
