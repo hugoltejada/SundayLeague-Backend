@@ -44,4 +44,11 @@ class Player extends Model
             ->withPivot('team_side', 'is_captain', 'goals', 'assists')
             ->withTimestamps();
     }
+
+    public function seasons()
+    {
+        return $this->belongsToMany(Season::class, 'season_player')
+            ->withPivot('goals', 'assists', 'matches_played')
+            ->withTimestamps();
+    }
 }

@@ -20,6 +20,7 @@ class Club extends Model
         'image_url',
         'default_schedules',
         'match_duration',
+        'city',
     ];
 
     protected $casts = [
@@ -47,5 +48,10 @@ class Club extends Model
     public function matches()
     {
         return $this->hasMany(Matches::class);
+    }
+
+    public function seasons()
+    {
+        return $this->hasMany(Season::class);
     }
 }

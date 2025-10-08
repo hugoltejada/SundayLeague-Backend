@@ -12,13 +12,15 @@ return new class extends Migration {
             $table->json('default_schedules')->nullable()->after('image_url');
             // duración del partido (en minutos)
             $table->integer('match_duration')->default(60)->after('default_schedules');
+            // ciudad del club
+            $table->string('city')->nullable()->after('name');
         });
     }
 
     public function down(): void
     {
         Schema::table('clubs', function (Blueprint $table) {
-            $table->dropColumn(['default_schedules', 'match_duration']);
+            $table->dropColumn(['default_schedules', 'match_duration', 'city']);
         });
     }
 };

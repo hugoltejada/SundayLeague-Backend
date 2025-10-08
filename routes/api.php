@@ -5,6 +5,7 @@ use App\Http\Controllers\PhoneController;
 use App\Http\Controllers\ClubController;
 use App\Http\Controllers\UploadController;
 use App\Http\Controllers\PlayerController;
+use App\Http\Controllers\SeasonController;
 
 Route::post('/phone/registry-email', [PhoneController::class, 'registryEmail'])
     ->middleware('firebase.auth');
@@ -31,4 +32,7 @@ Route::post('/clubs/join', [ClubController::class, 'requestJoin'])
     ->middleware('auth.phone');
 
 Route::post('/player/avatar', [PlayerController::class, 'updateAvatar'])
+    ->middleware('auth.phone');
+
+Route::post('/seasons', [SeasonController::class, 'store'])
     ->middleware('auth.phone');

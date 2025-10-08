@@ -40,13 +40,16 @@ class ClubController extends Controller
             $data['president_id'] = $phone->player->id;
         }
 
-        // Guardar club con name, description e image_url
+        // Guardar club con nuevos campos stadium y location
         $club = Club::create([
-            'name'        => $data['name'],
-            'description' => $data['description'] ?? null,
-            'image_url'   => $data['image_url'] ?? null, // 👈 URL de Firebase
+            'name'           => $data['name'],
+            'description'    => $data['description'] ?? null,
+            'city'           => $data['city'] ?? null,
+            'stadium'        => $data['stadium'] ?? null,
+            'location'       => $data['location'] ?? null,
+            'image_url'      => $data['image_url'] ?? null, // 👈 URL de Firebase
             'invitation_code' => $data['invitation_code'],
-            'president_id'    => $data['president_id'] ?? null,
+            'president_id'   => $data['president_id'] ?? null,
         ]);
 
         // añadir también al pivot club_player

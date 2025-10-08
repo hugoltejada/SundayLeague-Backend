@@ -185,10 +185,15 @@ class PhoneController extends Controller
                 'auth_token'         => Str::random(60), // 🔑 refrescamos auth_token
             ]);
 
+            // Aseguramos que exista player y obtenemos avatar
+            $phone->load('player');
+            $avatar = $phone->player->avatar ?? null;
+
             return response()->json([
                 'error'   => false,
                 'message' => 'Login ok',
                 'phone'   => $phone,
+                'avatar'  => $avatar,
             ]);
         } catch (\Throwable $e) {
             \Log::error('[Controller] Error loginEmail: ' . $e->getMessage());

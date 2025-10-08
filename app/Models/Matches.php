@@ -11,6 +11,7 @@ class Match extends Model
 
     protected $fillable = [
         'club_id',
+        'season_id',
         'created_by',
         'match_date',
         'location',
@@ -21,6 +22,11 @@ class Match extends Model
     public function club()
     {
         return $this->belongsTo(Club::class);
+    }
+
+    public function season()
+    {
+        return $this->belongsTo(Season::class);
     }
 
     public function creator()

@@ -16,6 +16,7 @@ class StoreClubRequest extends FormRequest
     {
         return [
             'name'         => 'required|string|max:255|unique:clubs,name',
+            'city'         => 'required|string|max:255',
             'stadium'      => 'nullable|string|max:255',
             'schedule'     => 'nullable|string|max:255',
             'location'     => 'nullable|string|max:255',
