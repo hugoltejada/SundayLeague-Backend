@@ -12,7 +12,7 @@ class MatchPlayer extends Model
     protected $table = 'match_player';
 
     protected $fillable = [
-        'match_id',
+        'matches_id',
         'player_id',
         'team_side',
         'is_captain',
@@ -22,7 +22,7 @@ class MatchPlayer extends Model
 
     public function match()
     {
-        return $this->belongsTo(Matches::class);
+        return $this->belongsTo(Matches::class, 'matches_id');
     }
 
     public function player()

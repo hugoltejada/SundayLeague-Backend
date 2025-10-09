@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Match extends Model
+class Matches extends Model
 {
     use HasFactory;
 
@@ -37,7 +37,12 @@ class Match extends Model
     public function players()
     {
         return $this->belongsToMany(Player::class, 'match_player')
-                    ->withPivot('team_side', 'is_captain', 'goals', 'assists')
-                    ->withTimestamps();
+            ->withPivot('team_side', 'is_captain', 'goals', 'assists')
+            ->withTimestamps();
+    }
+
+    public function guests()
+    {
+        return $this->hasMany(MatchGuest::class, 'matches_id');
     }
 }
